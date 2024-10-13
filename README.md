@@ -1,6 +1,6 @@
-# [NeurIPS 2024] Expanding Sparse Tuning to Low Memory Usage
+# [NeurIPS 2024] Expanding Sparse Tuning for Low Memory Usage
 
-**This is the official implementation of our paper:** Expanding Sparse Tuning to Low Memory Usage
+**This is the official implementation of our paper:** Expanding Sparse Tuning for Low Memory Usage
 
 ### Introduction:
 
@@ -8,11 +8,11 @@ We propose a method called SNELL (**S**parse tuning with ker**NEL**ized **L**oRA
 
 ![framework](./main.png)
 
-If you find this repository or our paper useful, please consider cite and star us!
+If you find this repository or our paper useful, please cite and star us!
 
 ```
 @InProceedings{shen24neurips,
-  title = {Expanding Sparse Tuning to Low Memory Usage},
+  title = {Expanding Sparse Tuning for Low Memory Usage},
   author = {Shen, Shufan and Sun, Junshu and Ji, Xiangyang and Huang, Qingming and Wang, Shuhui},
   booktitle = {Thirty-Eighth Annual Conference on Neural Information Processing Systems},
   year = {2024}
