@@ -1,6 +1,6 @@
 # [NeurIPS 2024] Expanding Sparse Tuning for Low Memory Usage
 
-**This is the official implementation of our paper:** Expanding Sparse Tuning for Low Memory Usage
+**This is the official implementation of our paper:** [Expanding Sparse Tuning for Low Memory Usage](https://arxiv.org/abs/2411.01800)
 
 ### Introduction:
 
