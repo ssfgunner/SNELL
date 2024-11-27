@@ -4,7 +4,6 @@ ptflops
 easydict
 PyYAML
 pillow
-torchvision==0.9.0
 opencv-python
 tqdm
 pyyaml
