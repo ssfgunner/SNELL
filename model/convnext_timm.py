@@ -12,7 +12,7 @@ from timm.models.helpers import named_apply, build_model_with_cfg
 from timm.models.layers import trunc_normal_, ClassifierHead, SelectAdaptivePool2d, DropPath, ConvMlp, to_2tuple
 
 from timm.models.registry import register_model
-
+import torch.utils.checkpoint as cp
 
 
 __all__ = ['ConvNeXt']  # model_registry will add each entrypoint fn to this
@@ -123,8 +123,8 @@ class KLoRA(nn.Module):
             return F.linear(x, self.pathIntegrals().T)
 
     def forward(self, x):
-        #return cp.checkpoint(self._forward, x)
-        return self._forward(x)
+        return cp.checkpoint(self._forward, x)
+        #return self._forward(x)
 
 class SNELL(nn.Module):
     def __init__(self, in_features, out_features, num_Hs=2, init_thres=0, q_dim=16, norm_p=2, SCALE_FACTOR_fc=0.1, enable_bias=False):
@@ -168,8 +168,8 @@ class SNELL(nn.Module):
             return F.linear(x, Sparse_W_fc.T)
         
     def forward(self, x):
-        #return cp.checkpoint(self._forward, x)
-        return self._forward(x)
+        return cp.checkpoint(self._forward, x)
+        #return self._forward(x)
 
 
 class TuningModule(nn.Module):

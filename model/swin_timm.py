@@ -31,6 +31,7 @@ from timm.models.registry import register_model
 from timm.models.vision_transformer import checkpoint_filter_fn 
 
 import ipdb
+import torch.utils.checkpoint as cp
 
 _logger = logging.getLogger(__name__)
 
@@ -156,8 +157,8 @@ class KLoRA(nn.Module):
             return F.linear(x, self.pathIntegrals().T)
 
     def forward(self, x):
-        #return cp.checkpoint(self._forward, x)
-        return self._forward(x)
+        return cp.checkpoint(self._forward, x)
+        #return self._forward(x)
 
 class SNELL(nn.Module):
     def __init__(self, in_features, out_features, num_Hs=2, init_thres=0, q_dim=16, norm_p=2, SCALE_FACTOR_fc=0.1, enable_bias=False):
@@ -201,8 +202,8 @@ class SNELL(nn.Module):
             return F.linear(x, Sparse_W_fc.T)
         
     def forward(self, x):
-        #return cp.checkpoint(self._forward, x)
-        return self._forward(x)
+        return cp.checkpoint(self._forward, x)
+        #return self._forward(x)
 
 
 class TuningModule(nn.Module):
@@ -873,7 +874,7 @@ class SwinTransformer(nn.Module):
         return x
 
 
-def _create_swin_transformer_sneel(variant, pretrained=False, default_cfg=None, **kwargs):  
+def _create_swin_transformer_snell(variant, pretrained=False, default_cfg=None, **kwargs):  
     default_cfg = default_cfg or default_cfgs[variant]
     if kwargs.get('features_only', None):
         raise RuntimeError('features_only not implemented for Vision Transformer models.')
@@ -904,7 +905,7 @@ def swin_base_patch4_window12_384(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=12, embed_dim=128, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32), **kwargs)
-    return _create_swin_transformer_sneel('swin_base_patch4_window12_384', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_base_patch4_window12_384', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -913,7 +914,7 @@ def swin_base_patch4_window7_224(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=7, embed_dim=128, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32), **kwargs)
-    return _create_swin_transformer_sneel('swin_base_patch4_window7_224', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_base_patch4_window7_224', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -922,7 +923,7 @@ def swin_large_patch4_window12_384(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=12, embed_dim=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48), **kwargs)
-    return _create_swin_transformer_sneel('swin_large_patch4_window12_384', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_large_patch4_window12_384', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -931,7 +932,7 @@ def swin_large_patch4_window7_224(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=7, embed_dim=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48), **kwargs)
-    return _create_swin_transformer_sneel('swin_large_patch4_window7_224', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_large_patch4_window7_224', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -940,7 +941,7 @@ def swin_small_patch4_window7_224(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=7, embed_dim=96, depths=(2, 2, 18, 2), num_heads=(3, 6, 12, 24), **kwargs)
-    return _create_swin_transformer_sneel('swin_small_patch4_window7_224', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_small_patch4_window7_224', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -949,7 +950,7 @@ def swin_tiny_patch4_window7_224(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=7, embed_dim=96, depths=(2, 2, 6, 2), num_heads=(3, 6, 12, 24), **kwargs)
-    return _create_swin_transformer_sneel('swin_tiny_patch4_window7_224', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_tiny_patch4_window7_224', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -958,7 +959,7 @@ def swin_base_patch4_window12_384_in22k(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=12, embed_dim=128, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32), **kwargs)
-    return _create_swin_transformer_sneel('swin_base_patch4_window12_384_in22k', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_base_patch4_window12_384_in22k', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -967,7 +968,7 @@ def swin_base_patch4_window7_224_in22k(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=7, embed_dim=128, depths=(2, 2, 18, 2), num_heads=(4, 8, 16, 32), **kwargs)
-    return _create_swin_transformer_sneel('swin_base_patch4_window7_224_in22k', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_base_patch4_window7_224_in22k', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -976,7 +977,7 @@ def swin_large_patch4_window12_384_in22k(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=12, embed_dim=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48), **kwargs)
-    return _create_swin_transformer_sneel('swin_large_patch4_window12_384_in22k', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_large_patch4_window12_384_in22k', pretrained=pretrained, **model_kwargs)
 
 
 @register_model
@@ -985,4 +986,4 @@ def swin_large_patch4_window7_224_in22k(pretrained=False, **kwargs):
     """
     model_kwargs = dict(
         patch_size=4, window_size=7, embed_dim=192, depths=(2, 2, 18, 2), num_heads=(6, 12, 24, 48), **kwargs)
-    return _create_swin_transformer_sneel('swin_large_patch4_window7_224_in22k', pretrained=pretrained, **model_kwargs)
+    return _create_swin_transformer_snell('swin_large_patch4_window7_224_in22k', pretrained=pretrained, **model_kwargs)
