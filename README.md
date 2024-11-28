@@ -8,7 +8,7 @@ We propose a method called SNELL (**S**parse tuning with ker**NEL**ized **L**oRA
 
 ![framework](./main.png)
 
-If you find this repository or our paper useful, please consider cite and star us!
+If you find this repository or our paper useful, please consider citing and staring us!
 
 ```
 @InProceedings{Shen_2024_SNELL,
@@ -23,7 +23,7 @@ If you find this repository or our paper useful, please consider cite and star u
 
 ## Getting started on SNELL:
 
-### Structure of the this repo:
+### Structure of this repo:
 
 - ``./train.py``: run this file for training.
 - ``./scripts``: scripts for adapting pre-trained models to downstream tasks with SNELL.
@@ -104,7 +104,7 @@ wget https://dl.fbaipublicfiles.com/convnext/convnext_base_22k_224.pth
 
 ### Examples for training:
 
-We have provided training scripts for adapting supervisedly pre-trained ViT to FGVC and VTAB-1K with SNELL-32, for example:
+We have provided training scripts for adapting supervised pre-trained ViT to FGVC and VTAB-1K with SNELL-32, for example:
 
 ```bash
 # Fine-tuning supervised pre-trained ViT-B/16 with SNELL-32 for CUB dataset of FGVC
@@ -138,7 +138,7 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --test --block=BlockSNELLParallel  --tuning_model=snell --freeze_stage
 ````
 
-- For supervisedly pre-trained Swin-Transformer:
+- For supervised pre-trained Swin-Transformer:
 
 ````bash
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
@@ -150,7 +150,7 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --test --block=BlockSNELLParallel  --tuning_model=snell --freeze_stage
 ````
 
-- For supervisedly pre-trained ConvNeXt:
+- For supervised pre-trained ConvNeXt:
 
 ````bash
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
