@@ -207,8 +207,8 @@ class KLoRA(nn.Module):
             return F.linear(x, self.pathIntegrals().T)
 
     def forward(self, x):
-        #return cp.checkpoint(self._forward, x)
-        return self._forward(x)
+        return cp.checkpoint(self._forward, x)
+        #return self._forward(x)
 
 class SNELL(nn.Module):
     def __init__(self, in_features, out_features, num_Hs=2, init_thres=0, q_dim=16, norm_p=2, SCALE_FACTOR_fc=0.1, enable_bias=False):
@@ -252,8 +252,8 @@ class SNELL(nn.Module):
             return F.linear(x, Sparse_W_fc.T)
         
     def forward(self, x):
-        #return cp.checkpoint(self._forward, x)
-        return self._forward(x)
+        return cp.checkpoint(self._forward, x)
+        #return self._forward(x)
 
 
 class TuningModule(nn.Module):
