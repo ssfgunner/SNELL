@@ -11,11 +11,16 @@ We propose a method called SNELL (**S**parse tuning with ker**NEL**ized **L**oRA
 If you find this repository or our paper useful, please consider cite and star us!
 
 ```
-@InProceedings{Shen_2024_SNELL,
-  title={Expanding Sparse Tuning for Low Memory Usage},
-  author={Shen, Shufan and Sun, Junshu and Ji, Xiangyang and Huang, Qingming and Wang, Shuhui},
-  booktitle={Advances in Neural Information Processing Systems (NeurIPS)},
-  year={2024}
+@inproceedings{Shen_2024_SNELL,
+ author = {Shen, Shufan and Sun, Junshu and Ji, Xiangyang and Huang, Qingming and Wang, Shuhui},
+ booktitle = {Advances in Neural Information Processing Systems},
+ editor = {A. Globerson and L. Mackey and D. Belgrave and A. Fan and U. Paquet and J. Tomczak and C. Zhang},
+ pages = {76616--76642},
+ publisher = {Curran Associates, Inc.},
+ title = {Expanding Sparse Tuning for Low Memory Usage},
+ url = {https://proceedings.neurips.cc/paper_files/paper/2024/file/8c420176b45e923cf99dee1d7356a763-Paper-Conference.pdf},
+ volume = {37},
+ year = {2024}
 }
 ```
 
