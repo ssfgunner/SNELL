@@ -19,7 +19,7 @@ beta2=0.85
 
 exp_name=fgvc_vit_supervised_${LR}_${init_thres}_${WEIGHT_DECAY}_${low_rank_dim}_${batch_size}
 
-python train_alloc_ema.py --data-path=/data/shufan/shufan/SPT/data/fgvc/${DATASET} --init_thres=${init_thres} \
+python train_alloc_ema.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/ViT-B_16.npz \
  --output_dir=./saves_snella_release/${tuning_model}/${DATASET}/${exp_name} \
  --batch-size=${batch_size} --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY} --mixup=0 --cutmix=0 \

@@ -20,7 +20,7 @@ DATASET=patch_camelyon
 
 exp_name=alloc_vtab_vit_supervised_${LR}_${target_ratio}_${WEIGHT_DECAY}_${low_rank_dim}_${batch_size}
 
-python train_alloc.py --data-path=/data/shufan/shufan/SPT/data/vtab-1k/${DATASET} --init_thres=${init_thres} \
+python train_alloc.py --data-path=./data/vtab-1k/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/ViT-B_16.npz \
  --output_dir=./saves_vtab_snella_release/${DATASET}/${exp_name} \
  --batch-size=${batch_size} --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY} --no_aug --mixup=0 --cutmix=0 --direct_resize \

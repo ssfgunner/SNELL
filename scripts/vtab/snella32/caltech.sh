@@ -11,7 +11,7 @@ DATASET=caltech101
 exp_name=vtab_vit_supervised_${LR}_${init_thres}_${WEIGHT_DECAY}_${low_rank_dim}_${batch_size}
 
 
-python train.py --data-path=/data/shufan/shufan/SPT/data/vtab-1k/${DATASET} \
+python train.py --data-path=./data/vtab-1k/${DATASET} \
  --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/ViT-B_16.npz \
  --output_dir=./saves_vtab_snella_release/${tuning_model}/${DATASET}/${exp_name} \
  --batch-size=${batch_size} --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY} --no_aug --mixup=0 --cutmix=0 --direct_resize \
