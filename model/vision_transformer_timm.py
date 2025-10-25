@@ -184,20 +184,20 @@ class KLoRA(nn.Module):
         self.norm_p = norm_p
         self.num_Hs = num_Hs
         self.SCALE_FACTOR_fc = SCALE_FACTOR_fc
-        self.In_Qs_1 = torch.nn.Parameter(torch.rand(num_Hs, in_features, q_dim//2))
-        self.Out_Qs_1 = torch.nn.Parameter(torch.rand(num_Hs, out_features, q_dim//2))
+        self.In_Qs = torch.nn.Parameter(torch.rand(num_Hs, in_features, q_dim//2))
+        self.Out_Qs = torch.nn.Parameter(torch.rand(num_Hs, out_features, q_dim//2))
         self.shared_coeff_fc = torch.nn.Parameter(SCALE_FACTOR_fc*torch.tensor([(-1)**h_id for h_id in range(self.num_Hs)]).unsqueeze(1).unsqueeze(2), requires_grad=False)
         self.bias = None
         self.enable_bias = enable_bias
         if enable_bias:
             self.bias = torch.nn.Parameter(torch.rand(out_features))
             nn.init.constant_(self.bias, 0)
-        nn.init.kaiming_uniform_(self.In_Qs_1, a=math.sqrt(5))
-        nn.init.kaiming_uniform_(self.Out_Qs_1, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.In_Qs, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.Out_Qs, a=math.sqrt(5))
 
 
     def pathIntegrals(self):
-        dist_io = torch.cdist(self.In_Qs_1, self.Out_Qs_1, p=self.norm_p)
+        dist_io = torch.cdist(self.In_Qs, self.Out_Qs, p=self.norm_p)
         return torch.sum(self.shared_coeff_fc*dist_io, dim=0)
 
     def _forward(self, x):
@@ -207,8 +207,43 @@ class KLoRA(nn.Module):
             return F.linear(x, self.pathIntegrals().T)
 
     def forward(self, x):
-        return cp.checkpoint(self._forward, x)
+        return cp.checkpoint(self._forward, x, use_reentrant=False)
         #return self._forward(x)
+
+class MixK(nn.Module):
+    # integrate multiple kernel functions
+    def __init__(self, in_features, out_features, num_Hs=2, q_dim=16, norm_p=2, SCALE_FACTOR_fc=0.1, enable_bias=False):
+        super(MixK, self).__init__()
+        self.norm_p = norm_p
+        self.num_Hs = num_Hs
+        self.SCALE_FACTOR_fc = SCALE_FACTOR_fc
+
+        self.In_Qs = torch.nn.Parameter(torch.rand(num_Hs, in_features, q_dim//num_Hs))
+        self.Out_Qs = torch.nn.Parameter(torch.rand(num_Hs, out_features, q_dim//num_Hs))
+        self.shared_coeff_fc = torch.nn.Parameter(SCALE_FACTOR_fc*torch.tensor([(-1)**h_id for h_id in range(self.num_Hs)]).unsqueeze(1).unsqueeze(2), requires_grad=False)
+
+        self.alpha = torch.nn.Parameter(torch.ones(1))
+        self.gamma = torch.nn.Parameter(torch.ones(1))
+        self.beta = torch.nn.Parameter(torch.zeros(1))
+        #self.norm = nn.LayerNorm(out_features)
+
+        nn.init.kaiming_uniform_(self.In_Qs, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.Out_Qs, a=math.sqrt(5))
+
+    def pathIntegrals(self):
+        dist_io = torch.cdist(self.In_Qs, self.Out_Qs, p=2)
+        dist_io = torch.sum(self.shared_coeff_fc*dist_io, dim=0)
+        dist_io = dist_io + self.alpha * F.softmax(dist_io/self.gamma, dim=-1) + self.beta
+        return dist_io
+
+    def _forward(self, x):
+        return F.linear(x, self.pathIntegrals().T)
+
+    def forward(self, x):
+        return cp.checkpoint(self._forward, x, use_reentrant=False)
+        # return self._forward(x)
+
+
 
 class SNELL(nn.Module):
     def __init__(self, in_features, out_features, num_Hs=2, init_thres=0, q_dim=16, norm_p=2, SCALE_FACTOR_fc=0.1, enable_bias=False):
@@ -216,8 +251,11 @@ class SNELL(nn.Module):
         self.norm_p = norm_p
         self.num_Hs = num_Hs
         
-        self.In_Qs = torch.nn.Parameter(torch.rand(num_Hs, in_features, q_dim//2))
-        self.Out_Qs = torch.nn.Parameter(torch.rand(num_Hs, out_features, q_dim//2))
+        self.in_features = in_features
+        self.out_features = out_features
+
+        self.In_Qs = torch.nn.Parameter(torch.rand(num_Hs, in_features, q_dim//num_Hs))
+        self.Out_Qs = torch.nn.Parameter(torch.rand(num_Hs, out_features, q_dim//num_Hs))
         self.shared_coeff_fc = torch.nn.Parameter(SCALE_FACTOR_fc*torch.tensor([(-1)**h_id for h_id in range(self.num_Hs)]).unsqueeze(1).unsqueeze(2), requires_grad=False)
         self.bias = None
         self.enable_bias = enable_bias
@@ -229,14 +267,19 @@ class SNELL(nn.Module):
         nn.init.kaiming_uniform_(self.Out_Qs, a=math.sqrt(5))
 
         self.init_thres = init_thres
-        
+        self.w_mag = None
+
     def sparsify(self, weight):
         weight_abs = weight.detach().abs()
         thres = torch.quantile(weight_abs.flatten(), self.init_thres)
         n_sub = F.threshold(weight_abs, float(thres), 0)
         weight = weight * n_sub
+        self.w_mag = torch.sum(weight.detach().abs()) / len(torch.nonzero(weight.detach().abs(), as_tuple=True))
+        #print(torch.sum(weight == 0))
         return weight
     
+    def get_w_mag(self):
+        return self.w_mag
 
     def pathIntegrals(self):
         dist_io = torch.cdist(self.In_Qs, self.Out_Qs, p=self.norm_p)
@@ -253,12 +296,64 @@ class SNELL(nn.Module):
         
     def forward(self, x):
         return cp.checkpoint(self._forward, x)
-        #return self._forward(x)
+        # return self._forward(x)
+
+class SNELLA(nn.Module):
+    def __init__(self, in_features, out_features, num_Hs=2, init_thres=0, q_dim=16, norm_p=2, SCALE_FACTOR_fc=0.1, enable_bias=False):
+        super(SNELLA, self).__init__()
+        self.norm_p = norm_p
+        self.num_Hs = num_Hs
+        
+        self.in_features = in_features
+        self.out_features = out_features
+
+        self.In_Qs = torch.nn.Parameter(torch.rand(num_Hs, in_features, q_dim//num_Hs))
+        self.Out_Qs = torch.nn.Parameter(torch.rand(num_Hs, out_features, q_dim//num_Hs))
+        self.shared_coeff_fc = torch.nn.Parameter(SCALE_FACTOR_fc*torch.tensor([(-1)**h_id for h_id in range(self.num_Hs)]).unsqueeze(1).unsqueeze(2), requires_grad=False)
+        
+        self.alpha = torch.nn.Parameter(torch.ones(1))
+        self.gamma = torch.nn.Parameter(torch.ones(1))
+        self.beta = torch.nn.Parameter(torch.zeros(1))
+
+        nn.init.kaiming_uniform_(self.In_Qs, a=math.sqrt(5))
+        nn.init.kaiming_uniform_(self.Out_Qs, a=math.sqrt(5))
+
+        # self.init_thres = nn.Parameter(torch.Tensor([init_thres]), requires_grad=False)
+        self.init_thres = init_thres
+        self.w_mag = None
+
+    def pathIntegrals(self):
+        dist_io = torch.cdist(self.In_Qs, self.Out_Qs, p=2)
+        dist_io = torch.sum(self.shared_coeff_fc*dist_io, dim=0)
+        dist_io = dist_io + self.alpha * F.softmax(dist_io/self.gamma, dim=-1) + self.beta
+        return dist_io
+
+    def sparsify(self, weight):
+        weight_abs = weight.detach().abs()
+        thres = torch.quantile(weight_abs.flatten(), self.init_thres)
+        # print(self.init_thres)
+        n_sub = F.threshold(weight_abs, float(thres), 0)
+        weight = weight * n_sub
+        # self.w_mag = torch.sum(weight.detach().abs()) / len(torch.nonzero(weight.detach().abs(), as_tuple=True))
+        # self.w_mag = torch.sum(weight.detach().abs())
+        return weight
+    def get_w_mag(self):
+        return self.w_mag
+    def _forward(self, x):
+        W_fc = self.pathIntegrals()
+        Sparse_W_fc = self.sparsify(W_fc)
+        return F.linear(x, Sparse_W_fc.T)
+        
+    def forward(self, x):
+        return cp.checkpoint(self._forward, x, use_reentrant=False)
+        #print('SNELL INTE')
+        # return self._forward(x)
+
 
 
 class TuningModule(nn.Module):
     def __init__(self, in_dim, out_dim, low_rank_dim,
-                 tuning_model='lora', bias=False, init_thres=0, norm_p=2, **kwargs):
+                 tuning_model='lora', bias=False, init_thres=0, norm_p=2, weight=None, **kwargs):
 
         super().__init__()
 
@@ -298,11 +393,15 @@ class TuningModule(nn.Module):
 
         elif tuning_model == 'klora':
             self.learnable = KLoRA(in_dim, out_dim, q_dim=low_rank_dim, norm_p=norm_p, enable_bias=False)
+        elif tuning_model == 'mixk':
+            self.learnable = MixK(in_dim, out_dim, q_dim=low_rank_dim, norm_p=norm_p, enable_bias=False)
         elif tuning_model == 'snell':
             if init_thres == 0:
                 self.learnable = KLoRA(in_dim, out_dim, q_dim=low_rank_dim, norm_p=norm_p, enable_bias=False)
             else:
                 self.learnable = SNELL(in_dim, out_dim, init_thres=init_thres, q_dim=low_rank_dim, norm_p=norm_p, enable_bias=False)
+        elif tuning_model == 'snella':
+            self.learnable = SNELLA(in_dim, out_dim, init_thres=init_thres, q_dim=low_rank_dim, norm_p=norm_p, enable_bias=False)
         self.drop_path = nn.Identity() if kwargs['no_drop_path'] else DropPath(0.1)
 
     def forward(self, x):
@@ -327,10 +426,10 @@ class AttentionSNELLParallel(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(proj_drop)
 
-        self.additional_q = TuningModule(dim, dim, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, **kwargs)
-        self.additional_k = TuningModule(dim, dim, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, **kwargs)
-        self.additional_v = TuningModule(dim, dim, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, **kwargs)
-        self.additional_proj = TuningModule(dim, dim, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, **kwargs)
+        self.additional_q = TuningModule(dim, dim, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, weight=self.q.weight, **kwargs)
+        self.additional_k = TuningModule(dim, dim, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, weight=self.k.weight, **kwargs)
+        self.additional_v = TuningModule(dim, dim, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, weight=self.v.weight, **kwargs)
+        self.additional_proj = TuningModule(dim, dim, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, weight=self.proj.weight, **kwargs)
 
         self.additional_drop = nn.Identity() if kwargs['no_drop_out'] else nn.Dropout(p=0.1)
 
@@ -402,9 +501,9 @@ class MlpSNELLParallel(nn.Module):
         self.fc2 = nn.Linear(hidden_features, out_features)
         self.drop2 = nn.Dropout(drop)
 
-        self.additional_fc1 = TuningModule(in_features, hidden_features, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, **kwargs)
+        self.additional_fc1 = TuningModule(in_features, hidden_features, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, weight=self.fc1.weight, **kwargs)
 
-        self.additional_fc2 = TuningModule(hidden_features, out_features, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, **kwargs)
+        self.additional_fc2 = TuningModule(hidden_features, out_features, low_rank_dim, tuning_model=tuning_model, bias=bias, init_thres=init_thres, norm_p=norm_p, weight=self.fc2.weight, **kwargs)
 
         self.additional_drop = nn.Identity() if kwargs['no_drop_out'] else nn.Dropout(p=0.1)
     

@@ -3,6 +3,7 @@ import sys
 from typing import Iterable, Optional
 import torch
 import torch.nn as nn
+import torch.distributed as dist
 
 from timm.data import Mixup
 from timm.utils import accuracy, ModelEma
@@ -32,11 +33,15 @@ TARGET_LAYER_LIST = [
     'blocks.11',
 ]
 
+def is_main_process():
+    """检查当前进程是否为主进程"""
+    return not dist.is_available() or not dist.is_initialized() or dist.get_rank() == 0
+
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0, 
                     mixup_fn: Optional[Mixup] = None,
-                    amp: bool = True, scaler=None):
+                    amp: bool = True, scaler=None, allocator=None, metric='ipt', model_ema=None, model_without_ddp=None):
 
     model.train()
     criterion.train()
@@ -49,10 +54,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     header = 'Epoch: [{}]'.format(epoch)
     print_freq = 10
 
-    #gpu_tracker = MemTracker()
+    current_step = epoch * len(data_loader)
+    
     for samples, targets in metric_logger.log_every(data_loader, print_freq, header):
 
-        #gpu_tracker.track()
         for p in model.parameters():
             if p.grad is not None:
                 p.grad.detach_()
@@ -79,7 +84,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 
         if not math.isfinite(loss_value):
-            print("Loss is {}, stopping training".format(loss_value))
+            if is_main_process():
+                print("Loss is {}, stopping training".format(loss_value))
             sys.exit(1)
 
         optimizer.zero_grad()
@@ -97,7 +103,23 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         else:
             loss.backward()
             optimizer.step()
+        # 在train_one_epoch函数中,loss_scaler.step()之后添加:
+        if model_ema is not None:
+            model_ema.update(model)
+        
+        # for name, param in model.named_parameters():
+        #     if param.grad is not None:
+        #         print(name)
+        
+        if allocator is not None:
+            
+            #allocator.update(model, current_step)
+            if model_without_ddp is None:
+                model_without_ddp = model
+            allocator.update_ipt(model_without_ddp, metric=metric)
+            
 
+        current_step += 1
         torch.cuda.synchronize()
 
         metric_logger.update(loss=loss_value)
@@ -105,7 +127,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    print("Averaged stats:", metric_logger)
+    if is_main_process():
+        print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 
@@ -156,7 +179,8 @@ def evaluate(data_loader, model, device, amp=True):
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
-          .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
+    if is_main_process():
+        print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
+              .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
 
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}

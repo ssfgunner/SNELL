@@ -1,36 +1,11 @@
-# [NeurIPS 2024] Expanding Sparse Tuning for Low Memory Usage
+# Sparse Fine-tuning for Vision Models
 
-**This is the official implementation of our paper:** [Expanding Sparse Tuning for Low Memory Usage](https://arxiv.org/abs/2411.01800).
+**This is the official implementation of our paper SNELL:** [Expanding Sparse Tuning for Low Memory Usage](https://arxiv.org/abs/2411.01800)**, and SNELLA: **[Kernelized Sparse Fine-Tuning with Bi-level Parameter Competition for Vision Models]().
 
-## Introduction:
-
-We propose a method called SNELL (**S**parse tuning with ker**NEL**ized **L**oRA) to enable sparse tuning with low memory usage. SNELL decomposes the tunable matrix for sparsification into two learnable low-rank matrices, saving from the costly storage of the original full matrix. To maintain the effectiveness of sparse tuning with low-rank matrices, we extend the low-rank decomposition from a kernel perspective. Specifically, we apply nonlinear kernel functions to the full-matrix merging and gain an increase in the rank of the merged matrix.  Employing higher ranks enhances the ability of SNELL to optimize the pre-trained model sparsely for downstream tasks. To further reduce the memory usage in sparse tuning, we introduce a competition-based sparsification mechanism, avoiding the storage of tunable weight indexes. Extensive experiments on multiple downstream tasks show that SNELL achieves state-of-the-art performance with low memory usage, extending effective PEFT with sparse tuning to large-scale models.
-
-![framework](./main.png)
-
-If you find this repository or our paper useful, please consider citing and staring us!
-
-```
-@inproceedings{Shen_2024_SNELL,
- author = {Shen, Shufan and Sun, Junshu and Ji, Xiangyang and Huang, Qingming and Wang, Shuhui},
- booktitle = {Advances in Neural Information Processing Systems},
- editor = {A. Globerson and L. Mackey and D. Belgrave and A. Fan and U. Paquet and J. Tomczak and C. Zhang},
- pages = {76616--76642},
- publisher = {Curran Associates, Inc.},
- title = {Expanding Sparse Tuning for Low Memory Usage},
- url = {https://proceedings.neurips.cc/paper_files/paper/2024/file/8c420176b45e923cf99dee1d7356a763-Paper-Conference.pdf},
- volume = {37},
- year = {2024}
-}
-```
-
-------
-
-## Getting started on SNELL:
+## Getting started:
 
 ### Structure of this repo:
 
-- ``./train.py``: run this file for training.
 - ``./scripts``: scripts for adapting pre-trained models to downstream tasks with SNELL.
 - ``./lib``: helper functions for io, loggings, training, and data loading.
 - ``./model``: backbone architectures and methods for fine-tuning.
@@ -109,7 +84,9 @@ wget https://dl.fbaipublicfiles.com/convnext/convnext_base_22k_224.pth
 
 ### Examples for training:
 
-We have provided training scripts for adapting supervised pre-trained ViT to FGVC and VTAB-1K with SNELL-32, for example:
+We have provided training scripts for adapting supervised pre-trained ViT to FGVC and VTAB-1K.
+
+For SNELL-32:
 
 ```bash
 # Fine-tuning supervised pre-trained ViT-B/16 with SNELL-32 for CUB dataset of FGVC
@@ -117,11 +94,21 @@ bash scripts/fgvc/snell32/vit_cub_snell.sh
 # Fine-tuning supervised pre-trained ViT-B/16 with SNELL-32 for CIFAR dataset of VTAB-1k
 bash scripts/vtab/snell32/vit_cifar_snell.sh
 ```
+For SNELLA-32: 
+
+```bash
+# Fine-tuning supervised pre-trained ViT-B/16 with SNELLA-32 for CUB dataset of FGVC
+bash scripts/fgvc/snella32/cub.sh
+# Fine-tuning supervised pre-trained ViT-B/16 with SNELLA-32 for CIFAR dataset of VTAB-1k
+bash scripts/vtab/snella32/cifar.sh
+```
+
 For other models, we provide scripts to fine-tune them on FGVC for example:
 
 - For ViT pre-trained with MAE:
 
 ```` bash
+# For SNELLA, replace the train.py with train_alloc.py and the tuning_model with snella
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/mae_pretrain_vit_base.pth \
  --output_dir=${save_dir} \
@@ -134,6 +121,7 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
 - For ViT pre-trained with MoCo v3:
 
 ````bash
+# For SNELLA, replace the train.py with train_alloc.py and the tuning_model with snella
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/linear-vit-b-300ep.pth.tar \
  --output_dir=${save_dir} \
@@ -146,6 +134,7 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
 - For supervised pre-trained Swin-Transformer:
 
 ````bash
+# For SNELLA, replace the train.py with train_alloc.py and the tuning_model with snella
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=swin_base_patch4_window7_224_in22k --resume=./checkpoints/swin_base_patch4_window7_224_22k.pth \
  --output_dir=${save_dir} \
@@ -158,6 +147,7 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
 - For supervised pre-trained ConvNeXt:
 
 ````bash
+# For SNELLA, replace the train.py with train_alloc.py and the tuning_model with snella
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=convnext_base_in22k --resume=./checkpoints/convnext_base_22k_224.pth \
  --output_dir=${save_dir} \
@@ -170,3 +160,21 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
 ### Acknowledgements:
 
 Our code is modified from [VPT](https://github.com/KMnP/vpt), [SSF](https://github.com/dongzelian/SSF) and [SPT](https://github.com/ziplab/SPT). We thank the authors for their open-sourced code.
+
+## Citation
+
+If you find this repository or our paper useful, please consider citing and staring us!
+
+```
+@inproceedings{Shen_2024_SNELL,
+ author = {Shen, Shufan and Sun, Junshu and Ji, Xiangyang and Huang, Qingming and Wang, Shuhui},
+ booktitle = {Advances in Neural Information Processing Systems},
+ editor = {A. Globerson and L. Mackey and D. Belgrave and A. Fan and U. Paquet and J. Tomczak and C. Zhang},
+ pages = {76616--76642},
+ publisher = {Curran Associates, Inc.},
+ title = {Expanding Sparse Tuning for Low Memory Usage},
+ url = {https://proceedings.neurips.cc/paper_files/paper/2024/file/8c420176b45e923cf99dee1d7356a763-Paper-Conference.pdf},
+ volume = {37},
+ year = {2024}
+}
+```
