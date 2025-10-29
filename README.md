@@ -1,6 +1,6 @@
 # Sparse Fine-tuning for Vision Models
 
-**This is the official implementation of our paper SNELL:** [Expanding Sparse Tuning for Low Memory Usage](https://arxiv.org/abs/2411.01800)**, and SNELLA: **[Kernelized Sparse Fine-Tuning with Bi-level Parameter Competition for Vision Models]().
+This is the official implementation of our paper SNELL: [Expanding Sparse Tuning for Low Memory Usage](https://arxiv.org/abs/2411.01800), and SNELLA: [Kernelized Sparse Fine-Tuning with Bi-level Parameter Competition for Vision Models](https://arxiv.org/abs/2510.24037).
 
 ## Getting started:
 
