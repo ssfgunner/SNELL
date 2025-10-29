@@ -108,20 +108,31 @@ For other models, we provide scripts to fine-tune them on FGVC for example:
 - For ViT pre-trained with MAE:
 
 ```` bash
-# For SNELLA, replace the train.py with train_alloc.py and the tuning_model with snella
+# For SNELL
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/mae_pretrain_vit_base.pth \
  --output_dir=${save_dir} \
  --batch-size=${batch_size} --lr=0.001 --epochs=100 --weight-decay=${WEIGHT_DECAY} --mixup=0 --cutmix=0 \
  --smoothing=0 --launcher="none" --seed=0 --val_interval=10  --opt=adamw --low_rank_dim=32 \
- --exp_name="ViT_MAE_${DATASET}" --seed=0 \
+ --exp_name="ViT_MAE_${DATASET}" \
  --test --block=BlockSNELLParallel  --tuning_model=snell --freeze_stage
+ 
+# For SNELLA
+python train_alloc.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
+ --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/mae_pretrain_vit_base.pth \
+ --output_dir=${save_dir} \
+ --batch-size=${batch_size} --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY} --no_aug --mixup=0 --cutmix=0 --direct_resize \
+ --smoothing=0 --launcher="none" --seed=${SEED} --val_interval=10  --opt=adamw --low_rank_dim=${low_rank_dim} \
+ --exp_name="ViT_MAE_${DATASET}" --target_ratio=${target_ratio} \
+ --test --block=BlockSNELLParallel  --tuning_model=snella --freeze_stage \
+ --use_sparse_allocator --init_warmup=${init_warmup} --final_warmup=${final_warmup} --mask_interval=${mask_interval} \
+ --beta1=${beta1} --beta2=${beta2} --metric=ipt
 ````
 
 - For ViT pre-trained with MoCo v3:
 
 ````bash
-# For SNELLA, replace the train.py with train_alloc.py and the tuning_model with snella
+# For SNELL
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/linear-vit-b-300ep.pth.tar \
  --output_dir=${save_dir} \
@@ -129,12 +140,23 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --smoothing=0 --launcher="none" --seed=0 --val_interval=10  --opt=adamw --low_rank_dim=32 \
  --exp_name="ViT_MoCo_${DATASET}" --seed=0 \
  --test --block=BlockSNELLParallel  --tuning_model=snell --freeze_stage
+ 
+# For SNELLA
+python train_alloc.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
+ --data-set=${DATASET} --model_name=vit_base_patch16_224_in21k_snell --resume=checkpoints/linear-vit-b-300ep.pth.tar \
+ --output_dir=${save_dir} \
+ --batch-size=${batch_size} --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY} --no_aug --mixup=0 --cutmix=0 --direct_resize \
+ --smoothing=0 --launcher="none" --seed=${SEED} --val_interval=10  --opt=adamw --low_rank_dim=${low_rank_dim} \
+ --exp_name="ViT_MoCo_${DATASET}" --target_ratio=${target_ratio} \
+ --test --block=BlockSNELLParallel  --tuning_model=snella --freeze_stage \
+ --use_sparse_allocator --init_warmup=${init_warmup} --final_warmup=${final_warmup} --mask_interval=${mask_interval} \
+ --beta1=${beta1} --beta2=${beta2} --metric=ipt
 ````
 
 - For supervised pre-trained Swin-Transformer:
 
 ````bash
-# For SNELLA, replace the train.py with train_alloc.py and the tuning_model with snella
+# For SNELL
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=swin_base_patch4_window7_224_in22k --resume=./checkpoints/swin_base_patch4_window7_224_22k.pth \
  --output_dir=${save_dir} \
@@ -142,12 +164,23 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --smoothing=0 --launcher="none" --seed=0 --val_interval=10  --opt=adamw --low_rank_dim=32 \
  --exp_name="Swin_${DATASET}" --seed=0 \
  --test --block=BlockSNELLParallel  --tuning_model=snell --freeze_stage
+
+# For SNELLA
+python train_alloc.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
+ --data-set=${DATASET} --model_name=swin_base_patch4_window7_224_in22k --resume=./checkpoints/swin_base_patch4_window7_224_22k.pth \
+ --output_dir=${save_dir} \
+ --batch-size=${batch_size} --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY} --no_aug --mixup=0 --cutmix=0 --direct_resize \
+ --smoothing=0 --launcher="none" --seed=${SEED} --val_interval=10  --opt=adamw --low_rank_dim=${low_rank_dim} \
+ --exp_name="Swin_${DATASET}" --target_ratio=${target_ratio} \
+ --test --block=BlockSNELLParallel  --tuning_model=snella --freeze_stage \
+ --use_sparse_allocator --init_warmup=${init_warmup} --final_warmup=${final_warmup} --mask_interval=${mask_interval} \
+ --beta1=${beta1} --beta2=${beta2} --metric=ipt
 ````
 
 - For supervised pre-trained ConvNeXt:
 
 ````bash
-# For SNELLA, replace the train.py with train_alloc.py and the tuning_model with snella
+# For SNELL
 python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --data-set=${DATASET} --model_name=convnext_base_in22k --resume=./checkpoints/convnext_base_22k_224.pth \
  --output_dir=${save_dir} \
@@ -155,6 +188,17 @@ python train.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
  --smoothing=0 --launcher="none" --seed=0 --val_interval=10  --opt=adamw --low_rank_dim=32 \
  --exp_name="ConvNeXt_${DATASET}" --seed=0 \
  --test --block=BlockSNELLParallel  --tuning_model=snell --freeze_stage
+
+# For SNELLA
+python train_alloc.py --data-path=./data/fgvc/${DATASET} --init_thres=${init_thres} \
+ --data-set=${DATASET} --model_name=convnext_base_in22k --resume=./checkpoints/convnext_base_22k_224.pth \
+ --output_dir=${save_dir} \
+ --batch-size=${batch_size} --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY} --no_aug --mixup=0 --cutmix=0 --direct_resize \
+ --smoothing=0 --launcher="none" --seed=${SEED} --val_interval=10  --opt=adamw --low_rank_dim=${low_rank_dim} \
+ --exp_name="ConvNeXt_${DATASET}" --target_ratio=${target_ratio} \
+ --test --block=BlockSNELLParallel  --tuning_model=snella --freeze_stage \
+ --use_sparse_allocator --init_warmup=${init_warmup} --final_warmup=${final_warmup} --mask_interval=${mask_interval} \
+ --beta1=${beta1} --beta2=${beta2} --metric=ipt
 ````
 
 ### Acknowledgements:
