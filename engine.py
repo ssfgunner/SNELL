@@ -34,7 +34,6 @@ TARGET_LAYER_LIST = [
 ]
 
 def is_main_process():
-    """检查当前进程是否为主进程"""
     return not dist.is_available() or not dist.is_initialized() or dist.get_rank() == 0
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
@@ -103,7 +102,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         else:
             loss.backward()
             optimizer.step()
-        # 在train_one_epoch函数中,loss_scaler.step()之后添加:
         if model_ema is not None:
             model_ema.update(model)
         

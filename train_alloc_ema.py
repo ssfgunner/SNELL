@@ -29,7 +29,7 @@ import logging
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('AutoFormer training and evaluation script', add_help=False)
+    parser = argparse.ArgumentParser('SNELLA training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int)
     parser.add_argument('--epochs', default=300, type=int)
     parser.add_argument('--model_name', default=None, type=str)
@@ -175,6 +175,7 @@ def get_args_parser():
 
     # Sparsity allocator
     parser.add_argument('--use_sparse_allocator', action='store_true')
+    parser.add_argument('--alloc_epoch', default=100, type=int,)
     parser.add_argument('--target_ratio', default=0.9, type=float,)
     parser.add_argument('--init_warmup', default=10, type=int,)
     parser.add_argument('--final_warmup', default=400, type=int,)
@@ -191,6 +192,7 @@ def get_args_parser():
     parser.add_argument('--tuning_model', type=str, default='SNELL', help="tuning model to use")
 
 
+    # 在get_args_parser()函数中添加:
     parser.add_argument('--model-ema', action='store_true', default=False,
                         help='Enable tracking moving average of model weights')
     parser.add_argument('--model-ema-decay', type=float, default=0.9999,
@@ -199,6 +201,7 @@ def get_args_parser():
 
     return parser
 
+# 在文件开头添加
 class ModelEma(torch.nn.Module):
     def __init__(self, model, decay=0.9999):
         super().__init__()
@@ -396,6 +399,7 @@ def main(args):
                 model.reset_classifier(args.nb_classes)
 
     model.to(device)
+    # 在model.to(device)之后添加:
     model_ema = None
     if args.model_ema:
         model_ema = ModelEma(model, args.model_ema_decay)
@@ -436,13 +440,13 @@ def main(args):
     if args.use_sparse_allocator:
         print('utilizing allocator')
         print(f'total steps: {args.epochs}')
-        allocator = Allocator(model, args.target_ratio, args.init_warmup, args.final_warmup, args.mask_interval, args.beta1, args.beta2, args.epochs)
+        allocator = Allocator(model, args.target_ratio, args.init_warmup, args.final_warmup, args.mask_interval, args.beta1, args.beta2, args.alloc_epoch)
 
     best_model = None
     for epoch in range(args.start_epoch, args.epochs):
 
         
-        if allocator is not None:
+        if allocator is not None and epoch < args.alloc_epoch:
             allocator.update(model, epoch)
 
         train_stats = train_engine(
@@ -456,6 +460,7 @@ def main(args):
 
         if epoch % args.val_interval == 0 or epoch >= args.epochs-10:  # Evaluate more in the last a few epochs
             test_stats = test_engine(data_loader_val, model, device, amp=args.amp)
+
             if model_ema is not None:
                 test_stats_ema = test_engine(data_loader_val, model_ema.module, device, amp=args.amp)
             
@@ -493,7 +498,6 @@ def main(args):
         with open(os.path.join(args.output_dir, 'alloc_volume_dict.json'), 'w') as f:
             json.dump(alloc_volume_dict, f)
     return max(max_accuracy, max_accuracy_ema)
-    
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser('SNELL training and evaluation scripts', parents=[get_args_parser()])

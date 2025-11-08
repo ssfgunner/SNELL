@@ -1,5 +1,3 @@
-# TODO: 按照可保留参数量而非sparsity ratio进行分配
-
 import math
 import torch
 import torch.nn as nn

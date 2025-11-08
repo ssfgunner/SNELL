@@ -26,7 +26,7 @@ import time
 
 
 def get_args_parser():
-    parser = argparse.ArgumentParser('AutoFormer training and evaluation script', add_help=False)
+    parser = argparse.ArgumentParser('SNELL training and evaluation script', add_help=False)
     parser.add_argument('--batch-size', default=64, type=int)
     parser.add_argument('--epochs', default=300, type=int)
     parser.add_argument('--model_name', default=None, type=str)

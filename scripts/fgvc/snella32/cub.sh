@@ -24,7 +24,7 @@ python train_alloc_ema.py --data-path=./data/fgvc/${DATASET} --init_thres=${init
  --output_dir=./saves_snella_release/${tuning_model}/${DATASET}/${exp_name} \
  --batch-size=${batch_size} --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY} --mixup=0 --cutmix=0 \
  --smoothing=0 --launcher="none" --seed=${SEED} --val_interval=10  --opt=adamw --low_rank_dim=${low_rank_dim} \
- --exp_name=${exp_name} --seed=0 \
+ --exp_name=${exp_name} --seed=0  --target_ratio=${target_ratio} \
  --test --block=BlockSNELLParallel  --tuning_model=${tuning_model} --freeze_stage \
  --init_warmup=${init_warmup} --final_warmup=${final_warmup} --mask_interval=${mask_interval} \
  --beta1=${beta1} --beta2=${beta2} --use_sparse_allocator --metric ipt --model-ema --model-ema-decay=0.9999 \
